@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>自动问答评估系统</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .result { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h2>自动问答评估系统</h2>
+    <form id="uploadForm">
+        <input type="file" name="files" multiple accept=".csv" required>
+        <button type="submit">开始评测</button>
+    </form>
+    <div class="result" id="result"></div>
+    <script>
+        document.getElementById('uploadForm').onsubmit = async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            document.getElementById('result').innerHTML = '评测中，请稍候...';
+            const res = await fetch('/upload', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.accuracy !== undefined) {
+                document.getElementById('result').innerHTML = 
+                    `准确率：<b>${(data.accuracy * 100).toFixed(2)}%</b><br>
+                    <a href='${data.excel_url}'>下载Excel结果</a>`;
+            } else {
+                document.getElementById('result').innerHTML = '评测失败，请重试。';
+            }
+        }
+    </script>
+</body>
+</html> 
