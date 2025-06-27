@@ -1,10 +1,9 @@
 import requests
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from .config import DIFY_API_URL, DIFY_API_KEY, DEEPSEEK_MODEL_PATH
+import re
+from .utils import init_model, safe_chat
+from .config import DIFY_API_URL, DIFY_API_KEY
 
-# DeepSeek模型用于判定
-tokenizer = AutoTokenizer.from_pretrained(DEEPSEEK_MODEL_PATH)
-model = AutoModelForCausalLM.from_pretrained(DEEPSEEK_MODEL_PATH)
+tokenizer, model, device = init_model()
 
 def get_ai_answer_and_judge(question, content):
     """
@@ -28,11 +27,11 @@ def get_ai_answer_and_judge(question, content):
         f"问题：{question}\n"
         f"原文内容：{content}\n"
         f"AI回答：{ai_answer}\n"
-        f"请仅输出'正确'或'错误'"
+        f"请仅输出"正确"或"错误""
     )
-    inputs = tokenizer(judge_prompt, return_tensors="pt")
-    outputs = model.generate(**inputs, max_new_tokens=16)
-    judge_result = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    # 只保留"正确"或"错误"
-    is_correct = "正确" if "正确" in judge_result else "错误"
+    response = safe_chat(tokenizer, model, judge_prompt, max_tokens=16)
+    if not response:
+        return ai_answer, "错误"
+    match = re.search(r"(正确|错误)", response)
+    is_correct = match.group(1) if match else "错误"
     return ai_answer, is_correct 
